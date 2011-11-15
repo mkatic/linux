@@ -1065,6 +1065,15 @@ static long do_fb_ioctl(struct fb_info *info, unsigned int cmd,
 	long ret = 0;
 
 	switch (cmd) {
+
+	case FBIOGET_VRAM_START_ADDRESS:
+		ret = (unsigned long)info->screen_base;
+		break;
+
+	case FBIOGET_VRAM_END_ADDRESS:
+		ret = (unsigned long)info->screen_base + (1024 * 1024) + (1024 * 256);
+		break;
+
 	case FBIOGET_VSCREENINFO:
 		if (!lock_fb_info(info))
 			return -ENODEV;

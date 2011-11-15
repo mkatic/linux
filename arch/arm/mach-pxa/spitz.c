@@ -31,7 +31,9 @@
 #include <linux/regulator/machine.h>
 #include <linux/io.h>
 #include <linux/module.h>
+#include <linux/memblock.h>
 
+#include <asm/sizes.h>
 #include <asm/setup.h>
 #include <asm/mach-types.h>
 #include <asm/mach/arch.h>
@@ -980,9 +982,15 @@ static void __init spitz_fixup(struct tag *tags, char **cmdline,
 	mi->bank[0].size = (64*1024*1024);
 }
 
+static void __init Cxx0_reserve_fbmem (void) {
+
+	memblock_reserve(0xA3E00000, SZ_1M);
+}
+
 #ifdef CONFIG_MACH_SPITZ
 MACHINE_START(SPITZ, "SHARP Spitz")
 	.fixup		= spitz_fixup,
+	.reserve	= Cxx0_reserve_fbmem,
 	.map_io		= pxa27x_map_io,
 	.init_irq	= pxa27x_init_irq,
 	.handle_irq	= pxa27x_handle_irq,
@@ -1005,6 +1013,7 @@ MACHINE_END
 #ifdef CONFIG_MACH_AKITA
 MACHINE_START(AKITA, "SHARP Akita")
 	.fixup		= spitz_fixup,
+	.reserve	= Cxx0_reserve_fbmem,
 	.map_io		= pxa27x_map_io,
 	.init_irq	= pxa27x_init_irq,
 	.handle_irq	= pxa27x_handle_irq,
