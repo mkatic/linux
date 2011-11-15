@@ -197,4 +197,7 @@ struct pxafb_info {
 #define MAX_XRES	1024
 #define MAX_YRES	1024
 
+#define INTERNAL_SRAM_START	0x5c000000
+#define INTERNAL_SRAM_SIZE	0x00040000
+
 #endif /* __PXAFB_H__ */

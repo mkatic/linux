@@ -54,11 +54,19 @@
 #include <linux/mutex.h>
 #include <linux/kthread.h>
 #include <linux/freezer.h>
+#include <linux/io.h>
+#include <linux/vmalloc.h>
 
 #include <mach/hardware.h>
 #include <asm/io.h>
 #include <asm/irq.h>
 #include <asm/div64.h>
+#include <asm/sizes.h>
+#include <asm/pgtable.h>
+#include <asm/page.h>
+#include <asm/mach/map.h>
+#include <asm/cacheflush.h>
+#include <asm/tlbflush.h>
 #include <mach/bitfield.h>
 #include <mach/pxafb.h>
 
@@ -85,6 +93,11 @@ static void setup_base_frame(struct pxafb_info *fbi,
 static int setup_frame_dma(struct pxafb_info *fbi, int dma, int pal,
 			   unsigned long offset, size_t size);
 
+static int init_framebuffer_memory(void);
+
+static unsigned long video_mem_size;
+static unsigned long phys_addr_fbram;
+static unsigned long fb_virt_addr;
 static unsigned long video_mem_size = 0;
 
 static inline unsigned long
@@ -1702,20 +1715,55 @@ static const struct dev_pm_ops pxafb_pm_ops = {
 };
 #endif
 
+static int init_framebuffer_memory() {
+
+	pgprot_t prot_section;
+	struct vm_struct * vram;
+	pgd_t *pgd;
+	pmd_t *pmd;
+
+	vram=get_vm_area((SZ_1M * 2), VM_IOREMAP);
+	if (vram == NULL)
+		return -1;
+	fb_virt_addr = (unsigned long) vram->addr;
+	fb_virt_addr &= (~SZ_1M << 20); /*align to 1MiB boundary. this is too crude... */
+
+	prot_section = 0xC46; /* user accessible, uncached, buffered */
+	phys_addr_fbram = 0xA3E00000;
+	pgd=pgd_offset_k(fb_virt_addr);
+	pmd=pmd_offset(pgd, (fb_virt_addr));
+	pmd[0] = phys_addr_fbram | prot_section;
+	pmd[1] = INTERNAL_SRAM_START | prot_section;
+	flush_tlb_all();
+	flush_cache_all();
+	return fb_virt_addr;
+}
+
 static int __devinit pxafb_init_video_memory(struct pxafb_info *fbi)
 {
-	int size = PAGE_ALIGN(fbi->video_mem_size);
 
-	fbi->video_mem = alloc_pages_exact(size, GFP_KERNEL | __GFP_ZERO);
+		int size;
+
+	fb_virt_addr = init_framebuffer_memory();
+	size = PAGE_ALIGN(fbi->video_mem_size);
+	if (fb_virt_addr != -1) {
+		fbi->video_mem = (void *)fb_virt_addr;
+		fbi->video_mem_phys = 0xA3E00000;
+	}
+	else {
+		printk(KERN_ALERT "PXAFB SRAM/RAM video ram allocation failed!\n");
+		fbi->video_mem = alloc_pages_exact(size, GFP_KERNEL | __GFP_ZERO);
+		fbi->video_mem_phys = virt_to_phys(fbi->video_mem);
+	}
+
 	if (fbi->video_mem == NULL)
-		return -ENOMEM;
+	return -ENOMEM;
 
-	fbi->video_mem_phys = virt_to_phys(fbi->video_mem);
 	fbi->video_mem_size = size;
 
-	fbi->fb.fix.smem_start	= fbi->video_mem_phys;
-	fbi->fb.fix.smem_len	= fbi->video_mem_size;
-	fbi->fb.screen_base	= fbi->video_mem;
+	fbi->fb.fix.smem_start = fbi->video_mem_phys;
+	fbi->fb.fix.smem_len = fbi->video_mem_size;
+	fbi->fb.screen_base = fbi->video_mem;
 
 	return fbi->video_mem ? 0 : -ENOMEM;
 }
