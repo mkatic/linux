@@ -110,6 +110,12 @@ config BATTERY_COLLIE
 	  Say Y to enable support for the battery on the Sharp Zaurus
 	  SL-5500 (collie) models.
 
+config BATTERY_SPITZ
+	tristate "Sharp SL-3000C (spitz) battery"
+	help
+	  Say Y to enable support for the battery on the Sharp Zaurus
+	  SL-3000C (spitz) models.
+
 config BATTERY_WM97XX
 	bool "WM97xx generic battery driver"
 	depends on TOUCHSCREEN_WM97XX=y
