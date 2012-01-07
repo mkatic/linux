@@ -1019,7 +1019,6 @@ static const struct input_device_id mousedev_ids[] = {
 		.evbit = { BIT_MASK(EV_KEY) | BIT_MASK(EV_REL) },
 		.relbit = { BIT_MASK(REL_WHEEL) },
 	},	/* A separate scrollwheel */
-#if 0
 	{
 		.flags = INPUT_DEVICE_ID_MATCH_EVBIT |
 				INPUT_DEVICE_ID_MATCH_KEYBIT |
@@ -1029,7 +1028,6 @@ static const struct input_device_id mousedev_ids[] = {
 		.absbit = { BIT_MASK(ABS_X) | BIT_MASK(ABS_Y) },
 	},	/* A tablet like device, at least touch detection,
 		   two absolute axes */
-#endif 
 	{
 		.flags = INPUT_DEVICE_ID_MATCH_EVBIT |
 				INPUT_DEVICE_ID_MATCH_KEYBIT |
