@@ -972,7 +972,12 @@ static int mousedev_connect(struct input_handler *handler,
 	struct mousedev *mousedev;
 	int minor;
 	int error;
-
+	
+	if (dev->id.vendor == 0 && dev->id.product == 0) {
+		printk (KERN_WARNING "mousedev ignoring device: %s\n", dev->name);
+		return 0;
+	}
+	
 	for (minor = 0; minor < MOUSEDEV_MINORS; minor++)
 		if (!mousedev_table[minor])
 			break;
