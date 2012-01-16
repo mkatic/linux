@@ -503,7 +503,7 @@ static void spitz_ads7846_wait_for_hsync(void)
 		cpu_relax();
 }
 
-static struct resource spitzts_resources[] = {
+static struct resource spitz_ts_resources[] = {
 	[0] = {
 		.start		= SPITZ_IRQ_GPIO_TP_INT,
 		.end		= SPITZ_IRQ_GPIO_TP_INT,
@@ -511,11 +511,11 @@ static struct resource spitzts_resources[] = {
 	},
 };
 
-static struct platform_device spitzts_device = {
+static struct platform_device spitz_ts_device = {
 	.name		= "corgi-ts",
 	.id		= -1,
-	.num_resources	= ARRAY_SIZE(spitzts_resources),
-	.resource	= spitzts_resources,
+	.num_resources	= ARRAY_SIZE(spitz_ts_resources),
+	.resource	= spitz_ts_resources,
 };
 
 static void spitz_bl_kick_battery(void)
@@ -975,6 +975,7 @@ static void __init spitz_init(void)
 	spitz_nand_init();
 	spitz_i2c_init();
 	platform_device_register(&spitz_battery_device);
+	platform_device_register(&spitz_ts_device);
 }
 
 static void __init spitz_fixup(struct tag *tags, char **cmdline,
