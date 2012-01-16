@@ -503,22 +503,19 @@ static void spitz_ads7846_wait_for_hsync(void)
 		cpu_relax();
 }
 
-static struct ads7846_platform_data spitz_ads7846_info = {
-	.model			= 7846,
-	.vref_delay_usecs	= 100,
-	.settle_delay_usecs	= 100, /* FIXME */
-	.x_plate_ohms		= 419,
-	.y_plate_ohms		= 486,
-	.pressure_max		= 1024,
-	.debounce_max		= 6,
-	.debounce_tol		= 9,
-	.debounce_rep		= 1,
-	.gpio_pendown		= SPITZ_GPIO_TP_INT,
-	.wait_for_sync		= spitz_ads7846_wait_for_hsync,
+static struct resource spitzts_resources[] = {
+	[0] = {
+		.start		= SPITZ_IRQ_GPIO_TP_INT,
+		.end		= SPITZ_IRQ_GPIO_TP_INT,
+		.flags		= IORESOURCE_IRQ,
+	},
 };
 
-static struct pxa2xx_spi_chip spitz_ads7846_chip = {
-	.gpio_cs		= SPITZ_GPIO_ADS7846_CS,
+static struct platform_device spitzts_device = {
+	.name		= "corgi-ts",
+	.id		= -1,
+	.num_resources	= ARRAY_SIZE(spitzts_resources),
+	.resource	= spitzts_resources,
 };
 
 static void spitz_bl_kick_battery(void)
@@ -551,15 +548,8 @@ static struct pxa2xx_spi_chip spitz_max1111_chip = {
 };
 
 static struct spi_board_info spitz_spi_devices[] = {
+	
 	{
-		.modalias		= "ads7846",
-		.max_speed_hz		= 1200000,
-		.bus_num		= 2,
-		.chip_select		= 0,
-		.platform_data		= &spitz_ads7846_info,
-		.controller_data	= &spitz_ads7846_chip,
-		.irq			= gpio_to_irq(SPITZ_GPIO_TP_INT),
-	}, {
 		.modalias		= "corgi-lcd",
 		.max_speed_hz		= 50000,
 		.bus_num		= 2,
