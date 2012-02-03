@@ -34,7 +34,7 @@
 #include <linux/fb.h>
 
 #include <asm/fb.h>
-
+#include <mach/dma.h>
 
     /*
      *  Frame buffer device initialization and setup routines
@@ -1051,6 +1051,8 @@ fb_blank(struct fb_info *info, int blank)
  	return ret;
 }
 
+static int channel; /* pxa_dma_blitter dma channel */
+
 static long do_fb_ioctl(struct fb_info *info, unsigned int cmd,
 			unsigned long arg)
 {
@@ -1065,6 +1067,32 @@ static long do_fb_ioctl(struct fb_info *info, unsigned int cmd,
 	long ret = 0;
 
 	switch (cmd) {
+
+	case FB_GET_DMA_CHANNEL:
+
+		int fake_irq_handler = 1;
+		int fake_data = 1;
+		channel = pxa_request_dma("pxa_dma_blitter",DMA_PRIO_MEDIUM, fake_irq_handler, fake_data);
+
+		/*enable branching */
+		DCSR(channel) |= DCSR_CMPST;
+
+		/* enable byte alignment */
+		DALGN |= (1 << channel);
+		break;
+
+	case FB_FREE_DMA_CHANNEL:
+
+		pxa_free_dma(channel);
+		break;
+
+	case FB_DMA_CHANNEL_RUNNING:
+
+		if (DCSR(channel) & DCSR_STOPSTATE)
+				ret = 0;
+		else ret = 1;
+
+			break;
 
 	case FBIOGET_VRAM_START_ADDRESS:
 		ret = (unsigned long)info->screen_base;
