@@ -1053,6 +1053,11 @@ fb_blank(struct fb_info *info, int blank)
 
 static int channel; /* pxa_dma_blitter dma channel */
 
+static void dma_blt_handler(int channel, void *data)
+{
+		return;
+}
+
 static long do_fb_ioctl(struct fb_info *info, unsigned int cmd,
 			unsigned long arg)
 {
@@ -1065,20 +1070,19 @@ static long do_fb_ioctl(struct fb_info *info, unsigned int cmd,
 	struct fb_event event;
 	void __user *argp = (void __user *)arg;
 	long ret = 0;
+	int fake_data = 1;
 
 	switch (cmd) {
 
 	case FB_GET_DMA_CHANNEL:
 
-		int fake_irq_handler = 1;
-		int fake_data = 1;
-		channel = pxa_request_dma("pxa_dma_blitter",DMA_PRIO_MEDIUM, fake_irq_handler, fake_data);
-
+		channel = pxa_request_dma("pxa_dma_blitter",DMA_PRIO_MEDIUM, dma_blt_handler, &fake_data);
 		/*enable branching */
-		DCSR(channel) |= DCSR_CMPST;
+		DCSR(channel) |= DCSR_SETCMPST;
 
 		/* enable byte alignment */
 		DALGN |= (1 << channel);
+		ret = channel;
 		break;
 
 	case FB_FREE_DMA_CHANNEL:
@@ -1091,8 +1095,14 @@ static long do_fb_ioctl(struct fb_info *info, unsigned int cmd,
 		if (DCSR(channel) & DCSR_STOPSTATE)
 				ret = 0;
 		else ret = 1;
+		break;
 
-			break;
+	case FB_DMA_START:
+
+		DDADR(channel) = arg|DDADR_BREN;
+		mb();
+		DCSR(channel) |= DCSR_RUN;
+		break;
 
 	case FBIOGET_VRAM_START_ADDRESS:
 		ret = (unsigned long)info->screen_base;

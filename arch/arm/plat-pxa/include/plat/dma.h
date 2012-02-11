@@ -35,6 +35,7 @@
 
 #define DDADR_DESCADDR	0xfffffff0	/* Address of next descriptor (mask) */
 #define DDADR_STOP	(1 << 0)	/* Stop (read / write) */
+#define DDADR_BREN		(1 << 1)	/* Branch enable */
 
 #define DCMD_INCSRCADDR	(1 << 31)	/* Source Address Increment Setting. */
 #define DCMD_INCTRGADDR	(1 << 30)	/* Target Address Increment Setting. */
