@@ -429,6 +429,19 @@ static struct gpio_keys_button spitz_gpio_keys[] = {
 		.gpio	= SPITZ_GPIO_SWB,
 		.desc	= "Lid Closed",
 	},
+	/* Two buttons for detecting USB host/client mode */
+	{
+		.type	= EV_SW,
+		.code	= 2,
+		.gpio	= SPITZ_GPIO_USB_DEVICE,
+		.desc	= "USB client connected",
+	},
+	{
+		.type	= EV_SW,
+		.code	= 3,
+		.gpio	= SPITZ_GPIO_USB_CONNECT,
+		.desc	= "USB host cable connected",
+	},
 };
 
 static struct gpio_keys_platform_data spitz_gpio_keys_platform_data = {
