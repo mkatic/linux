@@ -439,6 +439,7 @@ static struct gpio_keys_button spitz_gpio_keys[] = {
 	{
 		.type	= EV_SW,
 		.code	= 3,
+		.active_low = 1,
 		.gpio	= SPITZ_GPIO_USB_CONNECT,
 		.desc	= "USB host cable connected",
 	},
