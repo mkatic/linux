@@ -420,12 +420,14 @@ static struct gpio_keys_button spitz_gpio_keys[] = {
 	{
 		.type	= EV_SW,
 		.code	= 0,
+		.debounce_interval = 250,
 		.gpio	= SPITZ_GPIO_SWA,
 		.desc	= "Display Down",
 	},
 	{
 		.type	= EV_SW,
 		.code	= 1,
+		.debounce_interval = 250,
 		.gpio	= SPITZ_GPIO_SWB,
 		.desc	= "Lid Closed",
 	},
@@ -433,6 +435,7 @@ static struct gpio_keys_button spitz_gpio_keys[] = {
 	{
 		.type	= EV_SW,
 		.code	= 2,
+		.debounce_interval = 250,
 		.gpio	= SPITZ_GPIO_USB_DEVICE,
 		.desc	= "USB client connected",
 	},
@@ -440,6 +443,7 @@ static struct gpio_keys_button spitz_gpio_keys[] = {
 		.type	= EV_SW,
 		.code	= 3,
 		.active_low = 1,
+		.debounce_interval = 250,
 		.gpio	= SPITZ_GPIO_USB_CONNECT,
 		.desc	= "USB host cable connected",
 	},
