@@ -510,12 +510,13 @@ static void __locks_delete_block(struct file_lock *waiter)
 
 /*
  */
-static void locks_delete_block(struct file_lock *waiter)
+void locks_delete_block(struct file_lock *waiter)
 {
 	lock_flocks();
 	__locks_delete_block(waiter);
 	unlock_flocks();
 }
+EXPORT_SYMBOL(locks_delete_block);
 
 /* Insert waiter into blocker's block list.
  * We use a circular list so that processes can be easily woken up in
@@ -1464,7 +1465,7 @@ int generic_setlease(struct file *filp, long arg, struct file_lock **flp)
 	case F_WRLCK:
 		return generic_add_lease(filp, arg, flp);
 	default:
-		BUG();
+		return -EINVAL;
 	}
 }
 EXPORT_SYMBOL(generic_setlease);
