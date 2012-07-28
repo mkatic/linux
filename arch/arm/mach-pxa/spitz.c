@@ -15,6 +15,7 @@
 #include <linux/kernel.h>
 #include <linux/platform_device.h>
 #include <linux/delay.h>
+#include <asm/setup.h>
 #include <linux/gpio_keys.h>
 #include <linux/gpio.h>
 #include <linux/leds.h>
@@ -34,7 +35,6 @@
 #include <linux/memblock.h>
 
 #include <asm/sizes.h>
-#include <asm/setup.h>
 #include <asm/mach-types.h>
 #include <asm/mach/arch.h>
 #include <asm/mach/sharpsl_param.h>
@@ -437,7 +437,7 @@ static struct gpio_keys_button spitz_gpio_keys[] = {
 		.code	= 2,
 		.debounce_interval = 250,
 		.gpio	= SPITZ_GPIO_USB_DEVICE,
-		.desc	= "USB client connected",
+		.desc	= "USB client cable connected",
 	},
 	{
 		.type	= EV_SW,
@@ -446,6 +446,13 @@ static struct gpio_keys_button spitz_gpio_keys[] = {
 		.debounce_interval = 250,
 		.gpio	= SPITZ_GPIO_USB_CONNECT,
 		.desc	= "USB host cable connected",
+	},
+	{
+		.type	= EV_SW,
+		.code	= 4,
+		.debounce_interval = 250,
+		.gpio	= SPITZ_GPIO_HP_IN,
+		.desc	= "Headphones connected.",
 	},
 };
 
