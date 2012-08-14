@@ -95,7 +95,6 @@ static int setup_frame_dma(struct pxafb_info *fbi, int dma, int pal,
 
 static int init_framebuffer_memory(void);
 
-static unsigned long video_mem_size;
 static unsigned long phys_addr_fbram;
 static unsigned long fb_virt_addr;
 static unsigned long video_mem_size = 0;
@@ -918,12 +917,14 @@ static int __devinit pxafb_overlay_map_video_memory(struct pxafb_info *pxafb,
 	/* We assume that user will use at most video_mem_size for overlay fb,
 	 * anyway, it's useless to use 16bpp main plane and 24bpp overlay
 	 */
-	ofb->video_mem = alloc_pages_exact(PAGE_ALIGN(pxafb->video_mem_size),
-		GFP_KERNEL | __GFP_ZERO);
-	if (ofb->video_mem == NULL)
-		return -ENOMEM;
 
-	ofb->video_mem_phys = virt_to_phys(ofb->video_mem);
+	/* Layer 2 will always start at a constant offset in video ram */
+	int layer_offset = (640 * 480 * 2);
+	int layer_mem = (unsigned long)pxafb->video_mem + layer_offset;
+
+	ofb->video_mem = layer_mem;
+
+	ofb->video_mem_phys = pxafb->video_mem_phys + layer_offset;
 	ofb->video_mem_size = PAGE_ALIGN(pxafb->video_mem_size);
 
 	mutex_lock(&ofb->fb.mm_lock);
