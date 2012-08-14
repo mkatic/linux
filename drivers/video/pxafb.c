@@ -937,6 +937,28 @@ static int __devinit pxafb_overlay_map_video_memory(struct pxafb_info *pxafb,
 	return 0;
 }
 
+static int __devinit pxafb_overlay_map_video_memory_ofb2(struct pxafb_info *pxafb,
+	struct pxafb_layer *ofb)
+{
+	/* Layer 2 will always start at a constant offset in video ram */
+	int layer_offset = (640 * 480 * 2);
+	int layer_mem = (unsigned long)pxafb->video_mem + layer_offset;
+
+	ofb->video_mem = layer_mem;
+
+	ofb->video_mem_phys = pxafb->video_mem_phys + layer_offset;
+	ofb->video_mem_size = PAGE_ALIGN(pxafb->video_mem_size);
+
+	mutex_lock(&ofb->fb.mm_lock);
+	ofb->fb.fix.smem_start	= ofb->video_mem_phys;
+	ofb->fb.fix.smem_len	= pxafb->video_mem_size;
+	mutex_unlock(&ofb->fb.mm_lock);
+
+	ofb->fb.screen_base	= ofb->video_mem;
+
+	return 0;
+}
+
 static void __devinit pxafb_overlay_init(struct pxafb_info *fbi)
 {
 	int i, ret;
@@ -952,7 +974,10 @@ static void __devinit pxafb_overlay_init(struct pxafb_info *fbi)
 			dev_err(fbi->dev, "failed to register overlay %d\n", i);
 			continue;
 		}
-		ret = pxafb_overlay_map_video_memory(fbi, ofb);
+		if (i == 0) /* Overlay 2 (i == 1) will be mapped differently */
+			ret = pxafb_overlay_map_video_memory(fbi, ofb);
+		else
+			ret = pxafb_overlay_map_video_memory_ofb2(fbi, ofb);
 		if (ret) {
 			dev_err(fbi->dev,
 				"failed to map video memory for overlay %d\n",
