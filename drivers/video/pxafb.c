@@ -1721,7 +1721,8 @@ static const struct dev_pm_ops pxafb_pm_ops = {
 
 static int init_framebuffer_memory() {
 
-	pgprot_t prot_section;
+	pgprot_t prot_sdram;
+	pgprot_t prot_sram;
 	struct vm_struct * vram;
 	pgd_t *pgd;
 	pmd_t *pmd;
@@ -1732,12 +1733,13 @@ static int init_framebuffer_memory() {
 	fb_virt_addr = (unsigned long) vram->addr;
 	fb_virt_addr &= (~SZ_1M << 20); /*align to 1MiB boundary. this is too crude... */
 
-	prot_section = 0xC46; /* user accessible, uncached, buffered */
+	prot_sdram = 0xC46; /* user accessible, uncached, buffered */
+	prot_sram = 0xC4E; /* user accessible, cached, buffered */
 	phys_addr_fbram = 0xA3E00000;
 	pgd=pgd_offset_k(fb_virt_addr);
 	pmd=pmd_offset(pgd, (fb_virt_addr));
-	pmd[0] = phys_addr_fbram | prot_section;
-	pmd[1] = INTERNAL_SRAM_START | prot_section;
+	pmd[0] = phys_addr_fbram | prot_sdram;
+	pmd[1] = INTERNAL_SRAM_START | prot_sram;
 	flush_tlb_all();
 	flush_cache_all();
 	return fb_virt_addr;
