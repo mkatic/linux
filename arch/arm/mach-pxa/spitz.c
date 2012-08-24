@@ -429,6 +429,28 @@ static struct gpio_keys_button spitz_gpio_keys[] = {
 		.gpio	= SPITZ_GPIO_SWB,
 		.desc	= "Lid Closed",
 	},
+	{
+		.type	= EV_SW,
+		.code	= 2,
+		.debounce_interval = 250,
+		.gpio	= SPITZ_GPIO_USB_DEVICE,
+		.desc	= "USB client cable connected",
+	},
+	{
+		.type	= EV_SW,
+		.code	= 3,
+		.active_low = 1,
+		.debounce_interval = 250,
+		.gpio	= SPITZ_GPIO_USB_CONNECT,
+		.desc	= "USB host cable connected",
+	},
+	{
+		.type	= EV_SW,
+		.code	= 4,
+		.debounce_interval = 250,
+		.gpio	= SPITZ_GPIO_HP_IN,
+		.desc	= "Headphones connected.",
+	},
 };
 
 static struct gpio_keys_platform_data spitz_gpio_keys_platform_data = {
