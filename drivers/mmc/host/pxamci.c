@@ -80,18 +80,24 @@ struct pxamci_host {
 static inline void pxamci_init_ocr(struct pxamci_host *host)
 {
 #ifdef CONFIG_REGULATOR
+	int ocr_mask;
 	host->vcc = regulator_get(mmc_dev(host->mmc), "vmmc");
 
 	if (IS_ERR(host->vcc))
 		host->vcc = NULL;
 	else {
-		host->mmc->ocr_avail = mmc_regulator_get_ocrmask(host->vcc);
-		if (host->pdata && host->pdata->ocr_mask)
+		ocr_mask = mmc_regulator_get_ocrmask(host->vcc);
+		if (ocr_mask <= 0)
+			host->mmc->ocr_avail = 0;
+		else	
+			host->mmc->ocr_avail = ocr_mask;
+				
+		if (host->pdata && host->pdata->ocr_mask && host->mmc->ocr_avail)
 			dev_warn(mmc_dev(host->mmc),
 				"ocr_mask/setpower will not be used\n");
 	}
 #endif
-	if (host->vcc == NULL) {
+	if (host->vcc == NULL || host->mmc->ocr_avail == 0) {
 		/* fall-back to platform data */
 		host->mmc->ocr_avail = host->pdata ?
 			host->pdata->ocr_mask :
@@ -104,27 +110,29 @@ static inline int pxamci_set_power(struct pxamci_host *host,
 				    unsigned int vdd)
 {
 	int on;
-
+	
+#ifdef CONFIG_REGULATOR
 	if (host->vcc) {
-		int ret;
+		int ret = 0;
 
-		if (power_mode == MMC_POWER_UP) {
+		if (power_mode == MMC_POWER_UP)
 			ret = mmc_regulator_set_ocr(host->mmc, host->vcc, vdd);
-			if (ret)
-				return ret;
-		} else if (power_mode == MMC_POWER_OFF) {
+
+		if (power_mode == MMC_POWER_OFF)
 			ret = mmc_regulator_set_ocr(host->mmc, host->vcc, 0);
-			if (ret)
-				return ret;
-		}
+		
+		if (ret == 0)
+			return ret;
 	}
-	if (!host->vcc && host->pdata &&
+#endif
+	
+	if (host->pdata &&
 	    gpio_is_valid(host->pdata->gpio_power)) {
 		on = ((1 << vdd) & host->pdata->ocr_mask);
 		gpio_set_value(host->pdata->gpio_power,
 			       !!on ^ host->pdata->gpio_power_invert);
 	}
-	if (!host->vcc && host->pdata && host->pdata->setpower)
+	if (host->pdata && host->pdata->setpower)
 		host->pdata->setpower(mmc_dev(host->mmc), vdd);
 
 	return 0;
