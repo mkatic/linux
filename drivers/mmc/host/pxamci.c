@@ -79,7 +79,7 @@ struct pxamci_host {
 
 static inline void pxamci_init_ocr(struct pxamci_host *host)
 {
-#if 0
+#ifdef CONFIG_REGULATOR
 	host->vcc = regulator_get(mmc_dev(host->mmc), "vmmc");
 
 	if (IS_ERR(host->vcc))
