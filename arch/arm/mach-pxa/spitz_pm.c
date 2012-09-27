@@ -85,8 +85,8 @@ static void spitz_discharge1(int on)
 }
 
 static unsigned long gpio18_config[] = {
-	GPIO18_RDY,
 	GPIO18_GPIO,
+	GPIO18_RDY,
 };
 
 static void spitz_presuspend(void)
