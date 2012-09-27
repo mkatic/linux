@@ -161,8 +161,10 @@ static void led_set_software_blink(struct led_classdev *led_cdev,
  */
 void led_classdev_suspend(struct led_classdev *led_cdev)
 {
+/*
 	led_cdev->flags |= LED_SUSPENDED;
 	led_cdev->brightness_set(led_cdev, 0);
+*/
 }
 EXPORT_SYMBOL_GPL(led_classdev_suspend);
 
