@@ -717,7 +717,7 @@ static inline void spitz_irda_init(void) {}
 #if defined(CONFIG_FB_PXA) || defined(CONFIG_FB_PXA_MODULE)
 static struct pxafb_mode_info spitz_pxafb_modes[] = {
 	{
-		.pixclock       = 19231,
+		.pixclock       = 33654,
 		.xres           = 480,
 		.yres           = 640,
 		.bpp            = 16,
