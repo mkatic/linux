@@ -59,7 +59,7 @@ static int max1111_read(struct device *dev, int channel)
 
 	err = spi_sync(data->spi, &data->msg);
 	if (err < 0) {
-		dev_err(dev, "spi_sync failed with %d\n", err);
+	//	dev_err(dev, "spi_sync failed with %d\n", err);
 		mutex_unlock(&data->drvdata_lock);
 		return err;
 	}

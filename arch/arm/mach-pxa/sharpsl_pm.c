@@ -24,12 +24,14 @@
 #include <linux/leds.h>
 #include <linux/suspend.h>
 #include <linux/gpio.h>
-
+#include <linux/pxa2xx_ssp.h>
 #include <asm/mach-types.h>
 #include <mach/pm.h>
 #include <mach/pxa2xx-regs.h>
 #include <mach/regs-rtc.h>
 #include <mach/sharpsl_pm.h>
+#include <mach/gpio-pxa.h>
+#include <mach/spitz.h>
 
 /*
  * Constants
@@ -171,18 +173,41 @@ struct battery_thresh sharpsl_battery_levels_noac[] = {
 /*
  * Read MAX1111 ADC
  */
+
+#define SSP2_REGS_START 0x41700000
+#define SSP2_REG_SIZE 64
+#define TIMEOUT 100000
+#define SSCR0_SerClkDiv(x) (((x) - 1) << 8)
+
+static void __iomem *ssp2_reg_base;
+static volatile unsigned int sscr0, sscr1;
+
+static void init_ssp2(void);
+static void ssp_config(void);
+static void ssp_enable(void);
+static void ssp_disable(void);
+static int ssp_read_word(u32 *data);
+static int ssp_write_word(u32 data);
+static int max1111_raw_read(int channel);
+
 int sharpsl_pm_pxa_read_max1111(int channel)
 {
+	int ret;
+	extern int max1111_read_channel(int);
 	/* Ugly, better move this function into another module */
 	if (machine_is_tosa())
 	    return 0;
 
-	extern int max1111_read_channel(int);
-
 	/* max1111 accepts channels from 0-3, however,
 	 * it is encoded from 0-7 here in the code.
 	 */
-	return max1111_read_channel(channel >> 1);
+	ret = max1111_read_channel(channel >> 1);
+
+	if (ret < 0)
+		ret = max1111_raw_read(channel);
+	
+	return ret;
+
 }
 
 static int get_percentage(int voltage)
@@ -939,6 +964,8 @@ static int __devinit sharpsl_pm_probe(struct platform_device *pdev)
 	suspend_set_ops(&sharpsl_pm_ops);
 #endif
 
+	init_ssp2();
+
 	mod_timer(&sharpsl_pm.ac_timer, jiffies + msecs_to_jiffies(250));
 
 	return 0;
@@ -972,7 +999,98 @@ static int sharpsl_pm_remove(struct platform_device *pdev)
 	del_timer_sync(&sharpsl_pm.chrg_full_timer);
 	del_timer_sync(&sharpsl_pm.ac_timer);
 
+	iounmap(ssp2_reg_base);
+
 	return 0;
+}
+
+static void init_ssp2() {
+	ssp2_reg_base = ioremap(SSP2_REGS_START, SSP2_REG_SIZE);
+}
+
+static void ssp_enable()
+{
+	*((u32 *)ssp2_reg_base + SSCR0) |= SSCR0_SSE;
+}
+
+static void ssp_disable()
+{
+	*((u32 *)ssp2_reg_base + SSCR0) &= ~SSCR0_SSE;
+}
+
+static int ssp_read_word(u32 *data) {
+
+	int timeout = TIMEOUT;
+
+	while (!(__raw_readl(ssp2_reg_base + SSSR) & SSSR_RNE)) {
+	        if (!--timeout)
+	        	return -ETIMEDOUT;
+		cpu_relax();
+	}
+
+	*data = __raw_readl(ssp2_reg_base + SSDR);
+	return 0;
+}
+
+static int ssp_write_word(u32 data) {
+	int timeout = TIMEOUT;
+
+	while (!(__raw_readl(ssp2_reg_base + SSSR) & SSSR_TNF)) {
+	        if (!--timeout)
+	        	return -ETIMEDOUT;
+		cpu_relax();
+	}
+
+	__raw_writel(data, ssp2_reg_base + SSDR);
+
+	return 0;
+}
+
+static void ssp_config () {
+	*((u32 *)ssp2_reg_base + SSCR0) = (SSCR0_Motorola | (SSCR0_DSS & 0x07) | SSCR0_SerClkDiv(56));
+	*((u32 *)ssp2_reg_base + SSCR1) = 0x0;
+}
+
+static int max1111_raw_read(int channel) {
+
+	long voltage = 0, voltage1 = 0, voltage2 = 0;
+	int max1111_cmd;
+	
+	CKEN |= (1 << 3);
+	ssp_disable();
+	ssp_config();
+	mdelay(1);
+	ssp_enable();
+
+	max1111_cmd = (channel << MAXCTRL_SEL_SH) | MAXCTRL_PD0 | MAXCTRL_PD1
+					| MAXCTRL_SGL | MAXCTRL_UNI | MAXCTRL_STR;
+
+	gpio_set_value(SPITZ_GPIO_MAX1111_CS, 0); /*pull CS low */
+	/* TB1/RB1 */
+	ssp_write_word(max1111_cmd);
+	ssp_read_word((u32*)&voltage1); /* null read */
+
+	/* TB12/RB2 */
+	ssp_write_word(0);
+	ssp_read_word((u32*)&voltage1);
+
+	/* TB13/RB3*/
+	ssp_write_word(0);
+	ssp_read_word((u32*)&voltage2);
+
+	gpio_set_value(SPITZ_GPIO_MAX1111_CS, 1);
+
+	ssp_disable();
+	ssp_enable();
+
+	CKEN &= ~(1 << 3);
+
+	if ((voltage1 & 0xc0) || (voltage2 & 0x3f))
+		voltage = -1;
+	else
+		voltage = ((voltage1 << 2) & 0xfc) | ((voltage2 >> 6) & 0x03);
+
+	return voltage;
 }
 
 static struct platform_driver sharpsl_pm_driver = {
